@@ -34,10 +34,10 @@ layout = dmc.Container(
             style={"marginBottom": "30px"}
         ),
         
-        # Main grid with modified card structure
+        # Main grid with optimized card structure
         dmc.Grid(
             [
-                # Map column
+                # Map column (left side)
                 dmc.GridCol(
                     span=7,
                     children=[
@@ -52,49 +52,66 @@ layout = dmc.Container(
                     style={"height": "75vh"}
                 ),
                 
-                # Stats cards column
+                # Stats cards column (right side)
                 dmc.GridCol(
                     span=5,
                     children=dmc.Stack(
                         [
-                            # First row - summary cards
+                            # Top row - gender distribution and summary cards
                             dmc.Grid(
                                 [
-                                    dmc.GridCol(span=4, children=dmc.Paper(
-                                        dmc.Card(id="total-countries", withBorder=True, p=0),
-                                        withBorder=True, shadow="sm", radius="md"
-                                    )),
-                                    dmc.GridCol(span=4, children=dmc.Paper(
-                                        dmc.Card(id="total-migrants", withBorder=True, p=0),
-                                        withBorder=True, shadow="sm", radius="md"
-                                    )),
-                                    dmc.GridCol(span=4, children=dmc.Paper(
-                                        dmc.Card(id="total-population", withBorder=True, p=0),
-                                        withBorder=True, shadow="sm", radius="md"
-                                    )),
+                                    # Gender distribution (top-right)
+                                    dmc.GridCol(
+                                        span=6,
+                                        children=dmc.Paper(
+                                            dmc.Card(id="gender-stats-card", withBorder=True, p=0),
+                                            withBorder=True,
+                                            shadow="sm",
+                                            radius="md",
+                                            style={"height": "100%"}
+                                        )
+                                    ),
+                                    # Summary cards (top-left)
+                                    dmc.GridCol(
+                                        span=6,
+                                        children=dmc.Stack(
+                                            [
+                                                dmc.Paper(
+                                                    dmc.Card(id="total-countries", withBorder=True, p=0),
+                                                    withBorder=True, shadow="sm", radius="md"
+                                                ),
+                                                dmc.Paper(
+                                                    dmc.Card(id="total-migrants", withBorder=True, p=0),
+                                                    withBorder=True, shadow="sm", radius="md"
+                                                ),
+                                                dmc.Paper(
+                                                    dmc.Card(id="total-population", withBorder=True, p=0),
+                                                    withBorder=True, shadow="sm", radius="md"
+                                                )
+                                            ],
+                                            gap="sm"
+                                        )
+                                    )
                                 ],
                                 gutter="md"
                             ),
                             
-                            # Second row - detailed country stats
+                            # Middle row - country details
                             dmc.Paper(
                                 dmc.Card(id="country-stats-card", withBorder=True, p=0),
-                                withBorder=True, shadow="sm", radius="md",
+                                withBorder=True,
+                                shadow="sm",
+                                radius="md",
                                 style={"height": "22vh"}
                             ),
                             
-                            # Third row - continent breakdown
+                            # Bottom row - continent breakdown
                             dmc.Paper(
                                 dmc.Card(id="continent-stats-card", withBorder=True, p=0),
-                                withBorder=True, shadow="sm", radius="md",
-                                style={"height": "22vh"}
-                            ),
-                            
-                            # Fourth row - gender breakdown
-                            dmc.Paper(
-                                dmc.Card(id="gender-stats-card", withBorder=True, p=0),
-                                withBorder=True, shadow="sm", radius="md",
-                                style={"height": "22vh"}
+                                withBorder=True,
+                                shadow="sm",
+                                radius="md",
+                                style={"height": "30vh"}  # More space for continent details
                             )
                         ],
                         gap="md",
@@ -124,7 +141,8 @@ layout = dmc.Container(
         Output("total-countries", "children"),
         Output("total-migrants", "children"),
         Output("total-population", "children"),
-        Output("gender-stats-card", "children")
+        Output("gender-stats-card", "children"),
+        Output("continent-stats-card", "children")
     ],
     [Input("year-selector", "value")]
 )
@@ -257,17 +275,7 @@ def update_dashboard(selected_year):
         p="lg"
     )
     
-    return fig, countries_card, migrants_card, population_card, gender_card
-
-@callback(
-    Output("continent-stats-card", "children"),
-    [Input("year-selector", "value")]
-)
-def update_continent_stats(selected_year):
-    # Filter data for selected year
-    year_df = final_df[final_df['Year'] == selected_year]
-    
-    # Calculate continent statistics
+    # 3. Continent Breakdown Card
     continent_stats = year_df.groupby('continent').agg({
         'migration_both': 'sum',
         'population_both': 'sum',
@@ -275,13 +283,9 @@ def update_continent_stats(selected_year):
         'migration_female': 'sum'
     }).reset_index()
     
-    # Calculate global totals for percentages
-    total_migrants = year_df['migration_both'].sum()
-    total_population = year_df['population_both'].sum()
-    
-    return dmc.CardSection(
+    continent_card = dmc.CardSection(
         [
-            dmc.Title("Continental Statistics", order=4, mb="md"),
+            dmc.Title("Continental Breakdown", order=4, mb="md"),
             dmc.SimpleGrid(
                 cols=3,
                 spacing="lg",
@@ -354,6 +358,8 @@ def update_continent_stats(selected_year):
         ],
         p="lg"
     )
+    
+    return fig, countries_card, migrants_card, population_card, gender_card, continent_card
 
 @callback(
     Output("country-stats-card", "children"),
